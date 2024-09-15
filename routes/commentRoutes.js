@@ -65,4 +65,22 @@ router.delete(
   }
 );
 
+// Route to get comments for a specific post
+router.get(
+  "/:postId",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    const { postId } = req.params;
+
+    try {
+      const comments = await prisma.comment.findMany({
+        where: { postId: parseInt(postId) },
+      });
+      res.json(comments);
+    } catch (err) {
+      res.status(500).json({ error: "Error fetching comments" });
+    }
+  }
+);
+
 module.exports = router;

@@ -16,8 +16,15 @@ router.get(
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     const posts = await prisma.post.findMany({
-      where: { published: true },
-      include: { comments: true },
+      include: {
+        comments: true,
+        author: {
+          // Include author details
+          select: {
+            username: true, // Only select the username field
+          },
+        },
+      },
     });
     res.json(posts);
   }
@@ -32,7 +39,7 @@ router.get(
     try {
       const post = await prisma.post.findUnique({
         where: { id: parseInt(id) },
-        include: { comments: true },
+        include: { comments: true, author: true },
       });
       if (!post) {
         return res.status(404).json({ error: "Post not found" });
