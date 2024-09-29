@@ -38,7 +38,7 @@ router.delete(
   async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id; // Get user ID from the authenticated user
-
+    const userRole = req.user.role; // Assuming role is also stored in the user object
     try {
       // Find the comment by ID
       const comment = await prisma.comment.findUnique({
@@ -49,8 +49,8 @@ router.delete(
         return res.status(404).json({ error: "Comment not found" });
       }
 
-      // Check if the comment belongs to the user
-      if (comment.userId !== userId) {
+      // Check if the user is an admin or the comment belongs to the user
+      if (userRole !== "AUTHOR" && comment.userId !== userId) {
         return res
           .status(403)
           .json({ error: "Unauthorized to delete this comment" });
