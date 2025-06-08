@@ -13,19 +13,20 @@ router.post(
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     const { content, postId } = req.body;
-    const userId = req.user.id; // Get user ID from the authenticated user
+    const userId = req.user.id;
 
     try {
       const comment = await prisma.comment.create({
         data: {
           content,
-          postId,
+          postId: parseInt(postId),
           userId,
-          username: req.user.username, // Assuming the user object has a username field
+          username: req.user.username,
         },
       });
       res.status(201).json(comment);
     } catch (err) {
+      console.error("Error creating comment:", err);
       res.status(500).json({ error: "Error adding comment" });
     }
   }
@@ -37,8 +38,8 @@ router.delete(
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     const { id } = req.params;
-    const userId = req.user.id; // Get user ID from the authenticated user
-    const userRole = req.user.role; // Assuming role is also stored in the user object
+    const userId = req.user.id; 
+    const userRole = req.user.role; 
     try {
       // Find the comment by ID
       const comment = await prisma.comment.findUnique({
