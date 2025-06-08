@@ -7,37 +7,57 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 router.post("/register", async (req, res) => {
-  const { username, email, password, role } = req.body;
   try {
+    console.log('Registration request body:', req.body);
+    
+    const { username, email, password, role } = req.body;
+
     // Validate input
-    if (!username || !email || !password || !role) {
-      return res.status(400).json({ error: "All fields are required." });
+    if (!username || !email || !password) {
+      return res.status(400).json({ 
+        error: "Username, email and password are required" 
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username },
+          { email }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: "Username or email already exists" 
+      });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Ensure role is in uppercase and matches enum values
-    const validRole = role.toUpperCase(); // Convert role to uppercase
-
-    // Check if role is valid
-    if (!["USER", "AUTHOR"].includes(validRole)) {
-      return res.status(400).json({ error: "Invalid role." });
-    }
     // Create user
     const user = await prisma.user.create({
       data: {
         username,
         email,
         password: hashedPassword,
-        role: validRole,
-      },
+        role: role || 'USER'
+      }
     });
 
-    res.status(201).json(user);
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.status(201).json(userWithoutPassword);
   } catch (err) {
-    console.error(err); // Log the error
-    res.status(500).json({ error: "Error registering user." });
+    console.error('Server error during registration:', err);
+    res.status(500).json({ 
+      error: "Registration failed",
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
